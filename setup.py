@@ -43,17 +43,33 @@ with open("./README.md") as readme:
 
 
 setup(
-    name="<PYPI_NAME>",
+    name="ape-manticore",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
-    description="""<PYPI_NAME>: <SHORT_DESCRIPTION>""",
+    description="""ape-manticore: ape wrapper for manticore symbolic execution engine""",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="ApeWorX Ltd.",
-    author_email="admin@apeworx.io",
-    url="https://github.com/ApeWorX/<REPO_NAME>",
+    author="Hamza Hamud",
+    url="https://github.com/hhamud/ape-manticore",
     include_package_data=True,
-    install_requires=[],
+    install_requires=[
+        "pyyaml",
+        "protobuf~=3.20",
+        # evm dependencies
+        "pysha3",
+        "prettytable",
+        "ply",
+        "rlp",
+        "intervaltree",
+        "crytic-compile>=0.2.2",
+        "dataclasses; python_version < '3.7'",
+        "pyevmasm>=0.2.3",
+        "py-evm",
+        "z3-solver",
+        "keystone-engine",
+        "capstone==5.0.0rc2",
+        "pyevmasm>=0.2.3"
+        ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
     py_modules=["<MODULE_NAME>"],
@@ -61,7 +77,7 @@ setup(
     zip_safe=False,
     keywords="ethereum",
     packages=find_packages(exclude=["tests", "tests.*"]),
-    package_data={"<MODULE_NAME>": ["py.typed"]},
+    package_data={"ape-manticore": ["py.typed"]},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
