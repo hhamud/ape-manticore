@@ -20,6 +20,7 @@ consts.add("recursionlimit", default=10000, description="Value to set for Python
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
 logger = logging.getLogger("manticore.main")
 
+
 def main() -> None:
     """
     Dispatches execution into one of Manticore's engines: evm or native.

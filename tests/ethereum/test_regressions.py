@@ -14,6 +14,7 @@ DIRPATH = os.path.dirname(__file__)
 # so one doesn't have to set up virtualenv in a remote interpreter.
 PYTHON_BIN = sys.executable
 
+
 @unittest.skip("cli test to be replaced")
 class IntegrationTest(unittest.TestCase):
     _multiprocess_can_split_ = True

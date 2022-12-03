@@ -10,7 +10,11 @@ import pkg_resources
 from itertools import chain
 from ape_manticore.manticore.ethereum import ManticoreEVM
 from ape_manticore.manticore.ethereum.detectors import DetectIntegerOverflow
-from ape_manticore.manticore.ethereum.plugins import FilterFunctions, VerboseTrace, KeepOnlyIfStorageChanges
+from ape_manticore.manticore.ethereum.plugins import (
+    FilterFunctions,
+    VerboseTrace,
+    KeepOnlyIfStorageChanges,
+)
 from ape_manticore.manticore.core.smtlib.operators import OR, NOT, AND
 from ape_manticore.manticore.ethereum.abi import ABI
 from ape_manticore.manticore.utils.log import set_verbosity

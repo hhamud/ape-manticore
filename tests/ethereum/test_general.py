@@ -14,7 +14,12 @@ import tempfile
 
 from ape_manticore.manticore import ManticoreError
 from ape_manticore.manticore.core.plugin import Plugin
-from ape_manticore.manticore.core.smtlib import ConstraintSet, operators, PortfolioSolver, SolverType
+from ape_manticore.manticore.core.smtlib import (
+    ConstraintSet,
+    operators,
+    PortfolioSolver,
+    SolverType,
+)
 from ape_manticore.manticore.core.smtlib.expression import BitVec, BitVecVariable
 from ape_manticore.manticore.core.smtlib.visitors import to_constant
 from ape_manticore.manticore.core.state import TerminateState
@@ -33,7 +38,13 @@ from ape_manticore.manticore.ethereum import (
 from ape_manticore.manticore.ethereum.plugins import FilterFunctions
 from ape_manticore.manticore.ethereum.solidity import SolidityMetadata
 from ape_manticore.manticore.platforms import evm
-from ape_manticore.manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
+from ape_manticore.manticore.platforms.evm import (
+    EVMWorld,
+    ConcretizeArgument,
+    concretized_args,
+    Return,
+    Stop,
+)
 from ape_manticore.manticore.utils.deprecated import ManticoreDeprecationWarning
 from ape_manticore.manticore.utils import config
 import io
@@ -89,7 +100,8 @@ class EthVerifierIntegrationTest(unittest.TestCase):
             self.assertIsNotNone(
                 re.compile(r".*crytic_test_must_revert\s*\|\s*passed.*", re.DOTALL).match(output)
             )
-    @unittest.skip('cli to be replaced')
+
+    @unittest.skip("cli to be replaced")
     def test_propverif_external(self) -> None:
         cli_version = subprocess.check_output(("manticore-verifier", "--version")).decode("utf-8")
         cli_version = cli_version.split(
