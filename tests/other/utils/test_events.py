@@ -1,6 +1,6 @@
 import unittest
 
-from manticore.utils.event import Eventful
+from ape_manticore.manticore.utils.event import Eventful
 
 
 class A(Eventful):
