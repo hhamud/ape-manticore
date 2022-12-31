@@ -69,10 +69,12 @@ setup(
         "keystone-engine",
         "capstone==5.0.0rc2",
         "pyevmasm>=0.2.3",
+        # ape dependencies
+        "ape"
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
-    py_modules=["<MODULE_NAME>"],
+    py_modules=["ape_manticore"],
     license="Apache-2.0",
     zip_safe=False,
     keywords="ethereum",

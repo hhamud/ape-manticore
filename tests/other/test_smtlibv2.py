@@ -3,7 +3,7 @@ import os
 import sys
 from typing import Set, Type
 
-from manticore.core.smtlib import (
+from ape_manticore.manticore.core.smtlib import (
     ConstraintSet,
     Version,
     get_depth,
@@ -17,16 +17,16 @@ from manticore.core.smtlib import (
     BitVecConstant,
     BitVecExtract,
 )
-from manticore.core.smtlib.solver import (
+from ape_manticore.manticore.core.smtlib.solver import (
     Z3Solver,
     YicesSolver,
     CVC4Solver,
     BoolectorSolver,
     PortfolioSolver,
 )
-from manticore.core.smtlib.expression import *
-from manticore.utils.helpers import pickle_dumps
-from manticore import config
+from ape_manticore.manticore.core.smtlib.expression import *
+from ape_manticore.manticore.utils.helpers import pickle_dumps
+from ape_manticore.manticore import config
 
 # logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
@@ -666,7 +666,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a >= 100)
         self.assertTrue(self.solver.check(cs))
         self.assertEqual(self.solver.minmax(cs, a), (100, 200))
-        from manticore import config
+        from ape_manticore.manticore import config
 
         consts = config.get_group("smt")
         consts.optimize = False
@@ -679,7 +679,7 @@ class ExpressionTest(unittest.TestCase):
         consts.optimize = True
 
     def testBitvector_max_noop(self):
-        from manticore import config
+        from ape_manticore.manticore import config
 
         consts = config.get_group("smt")
         consts.optimize = False
@@ -695,7 +695,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(self.solver.minmax(cs, a), (101, 199))
 
     def testBitvector_max1_noop(self):
-        from manticore import config
+        from ape_manticore.manticore import config
 
         consts = config.get_group("smt")
         consts.optimize = False

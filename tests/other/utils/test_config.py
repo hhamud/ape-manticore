@@ -3,7 +3,7 @@ import argparse
 import tempfile
 import unittest
 
-from manticore.utils import config
+from ape_manticore.manticore.utils import config
 
 
 class ConfigTest(unittest.TestCase):

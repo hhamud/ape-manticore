@@ -8,7 +8,7 @@ import time
 import sys
 
 from google.protobuf.message import DecodeError
-from manticore.core.state_pb2 import StateList, State, MessageList
+from ape_manticore.manticore.core.state_pb2 import StateList, State, MessageList
 from pathlib import Path
 
 
