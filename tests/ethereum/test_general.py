@@ -37,14 +37,15 @@ from ape_manticore.manticore.ethereum import (
 )
 from ape_manticore.manticore.ethereum.plugins import FilterFunctions
 from ape_manticore.manticore.ethereum.solidity import SolidityMetadata
-from ape_manticore.manticore.platforms import evm
-from ape_manticore.manticore.platforms.evm import (
-    EVMWorld,
+
+# from ape_manticore.manticore.platforms import evm
+from ape_manticore.manticore.platforms.evm.evmworld import EVMWorld
+from ape_manticore.manticore.platforms.evm.exceptions import (
     ConcretizeArgument,
-    concretized_args,
     Return,
     Stop,
 )
+from ape_manticore.manticore.platforms.evm.common import concretized_args
 from ape_manticore.manticore.utils.deprecated import ManticoreDeprecationWarning
 from ape_manticore.manticore.utils import config
 import io

@@ -70,7 +70,7 @@ setup(
         "capstone==5.0.0rc2",
         "pyevmasm>=0.2.3",
         # ape dependencies
-        "ape"
+        "ape",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,

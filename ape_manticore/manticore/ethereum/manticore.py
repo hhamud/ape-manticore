@@ -31,7 +31,7 @@ from .detectors import Detector
 from .solidity import SolidityMetadata
 from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
-from ..platforms import evm
+from ..platforms.evm.evmworld import EVMWorld
 from ..utils import config
 from ..utils.deprecated import deprecated
 from ..utils.enums import Sha3Type
@@ -411,7 +411,7 @@ class ManticoreEVM(ManticoreBase):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints)
+        world = EVMWorld(constraints)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
         if plugins is not None:
@@ -712,7 +712,7 @@ class ManticoreEVM(ManticoreBase):
             raise NoAliveStates
 
         nonce = self.get_nonce(owner)
-        expected_address = evm.EVMWorld.calculate_new_address(int(owner), nonce=nonce)
+        expected_address = EVMWorld.calculate_new_address(int(owner), nonce=nonce)
 
         if address is None:
             address = expected_address

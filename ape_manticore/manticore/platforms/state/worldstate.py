@@ -1,16 +1,13 @@
-
+from ape.api import Web3Provider, ProviderAPI
 from .storage import Storage
-from typing import  Optional, Set, Union
+from typing import Optional, Set, Union
 from ...core.smtlib import (
     BitVec,
     ConstraintSet,
 )
 
 
-class WorldState:
-    def is_remote(self) -> bool:
-        return False
-
+class EmptyWorldState(ProviderAPI):
     def accounts(self) -> Set[int]:
         return set()
 
