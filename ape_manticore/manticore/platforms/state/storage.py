@@ -3,6 +3,8 @@ from ...core.smtlib import (
     BitVec,
     ConstraintSet,
 )
+
+
 class Storage:
     def __init__(
         self, constraints: ConstraintSet, address: int, items: Optional[Dict[int, int]] = None

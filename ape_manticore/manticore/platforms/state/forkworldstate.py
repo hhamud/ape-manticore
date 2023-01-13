@@ -1,29 +1,30 @@
+from .worldstate import EmptyWorldState
+from .storage import Storage
+from typing import Optional, Set, Union, Dict
+from ...core.smtlib import (
+    BitVec,
+    Array,
+    ConstraintSet,
+)
 
-class OverlayWorldState(WorldState):
-    """
-    If we decide to cache results returned from a RemoteWorldState, then they should NOT be cached
-    within an overlay.  The reason is that this could affect the results of subsequent operations.
-    Consider a call to get_storage_data followed by a call to has_storage.  If nothing was written
-    to storage within the overlay, then the call to has_storage will throw an exception.  But if the
-    result of the call to get_storage_data was cached in the overlay, then no exception would be
-    thrown.
-    """
+from ape.api import Web3Provider
 
-    def __init__(self, underlay: WorldState):
-        self._underlay: WorldState = underlay
+
+class ForkWorldState(Web3Provider):
+    def __init__(self, underlay: Web3Provider):
+        self._underlay: Web3Provider = underlay  # empty world state or forked world state
         self._deleted_accounts: Set[int] = set()
+        # account state (EOA and contract)
         self._nonce: Dict[int, Union[int, BitVec]] = {}
         self._balance: Dict[int, Union[int, BitVec]] = {}
         self._storage: Dict[int, Storage] = {}
         self._code: Dict[int, Union[bytes, Array]] = {}
+        # chain state
         self._blocknumber: Optional[Union[int, BitVec]] = None
         self._timestamp: Optional[Union[int, BitVec]] = None
         self._difficulty: Optional[Union[int, BitVec]] = None
         self._gaslimit: Optional[Union[int, BitVec]] = None
         self._coinbase: Optional[Union[int, BitVec]] = None
-
-    def is_remote(self) -> bool:
-        return self._underlay.is_remote()
 
     def accounts(self) -> Set[int]:
         accounts: Set[int] = set()
@@ -77,14 +78,12 @@ class OverlayWorldState(WorldState):
         storage = self._storage.get(address)
         return storage
 
-    def get_storage_data(
-        self, constraints: ConstraintSet, address: int, offset: Union[int, BitVec]
-    ) -> Union[int, BitVec]:
+    def get_storage_data(self, address: int, offset: Union[int, BitVec]) -> Union[int, BitVec]:
         value: Union[int, BitVec] = 0
         # sam.moelius: If the account was ever deleted, then ignore the underlay's storage.
         if address not in self._deleted_accounts:
             try:
-                value = self._underlay.get_storage_data(constraints, address, offset)
+                value = self._underlay.get_storage_data(address, offset)
             except NotImplementedError:
                 pass
         storage = self._storage.get(address)
@@ -128,11 +127,12 @@ class OverlayWorldState(WorldState):
         else:
             return self._underlay.get_coinbase()
 
-    def delete_account(self, constraints: ConstraintSet, address: int):
-        default_world_state = DefaultWorldState()
+    def delete_account(self, address: int):
+        # reset the account address's state to remote
+        default_world_state = EmptyWorldState()
         self._nonce[address] = default_world_state.get_nonce(address)
         self._balance[address] = default_world_state.get_balance(address)
-        self._storage[address] = Storage(constraints, address)
+        self._storage[address] = Storage(address)
         self._code[address] = default_world_state.get_code(address)
         self._deleted_accounts.add(address)
 

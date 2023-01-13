@@ -7,7 +7,7 @@ import unittest
 
 import os
 import shutil
-from ape_manticore.manticore.platforms.evm import EVMWorld
+from ape_manticore.manticore.platforms.evm.evmworld import EVMWorld
 from ape_manticore.manticore.core.smtlib import operators, ConstraintSet
 from ape_manticore.manticore.ethereum import ManticoreEVM
 from ape_manticore.manticore.ethereum.plugins import KeepOnlyIfStorageChanges
