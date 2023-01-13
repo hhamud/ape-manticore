@@ -4,7 +4,7 @@ import random
 import io
 import copy
 from typing import List, Set, Tuple, Union
-from ...platforms.platform import *
+from ...platforms.platform import Platform
 from ...core.smtlib import (
     SelectedSolver,
     BitVec,

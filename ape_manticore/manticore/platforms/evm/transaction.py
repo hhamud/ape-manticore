@@ -1,43 +1,11 @@
 #!/usr/bin/env python3
-import uuid
 import binascii
-import random
-import io
-import copy
-import inspect
-from functools import wraps
-from typing import List, Set, Tuple, Union
-from ...platforms.platform import *
 from ...core.smtlib import (
-    SelectedSolver,
     BitVec,
     Array,
-    ArrayProxy,
-    Operators,
-    Constant,
-    ArrayVariable,
-    ArrayStore,
-    BitVecConstant,
-    translate_to_smtlib,
-    to_constant,
-    simplify,
-    get_depth,
     issymbolic,
-    get_taints,
-    istainted,
-    taint_with,
 )
-from ...core.state import Concretize, TerminateState
-from ...utils.event import Eventful
 from ...utils.helpers import printable_bytes
-from ...utils import config
-from ...core.smtlib.visitors import simplify
-from ...exceptions import EthereumError
-import pyevmasm as EVMAsm
-import logging
-from collections import namedtuple
-import sha3
-import rlp
 
 
 class Transaction:

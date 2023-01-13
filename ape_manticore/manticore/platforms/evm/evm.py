@@ -1,22 +1,13 @@
 """Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf"""
 import uuid
-import binascii
-import random
-import io
-import copy
 import inspect
 from functools import wraps
-from typing import List, Set, Tuple, Union
-from ...platforms.platform import *
 from ...core.smtlib import (
     SelectedSolver,
     BitVec,
-    Array,
     ArrayProxy,
     Operators,
     Constant,
-    ArrayVariable,
-    ArrayStore,
     BitVecConstant,
     translate_to_smtlib,
     to_constant,
@@ -29,14 +20,10 @@ from ...core.smtlib import (
 )
 from ...core.state import Concretize, TerminateState
 from ...utils.event import Eventful
-from ...utils.helpers import printable_bytes
 from ...core.smtlib.visitors import simplify
 from ...exceptions import EthereumError
 import pyevmasm as EVMAsm
 import logging
-from collections import namedtuple
-import sha3
-import rlp
 from .common import *
 from .exceptions import *
 
