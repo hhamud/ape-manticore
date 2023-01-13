@@ -21,8 +21,8 @@ class AccountState:
         self.provider = provider
         self.nonce: Union[int, BitVec] = 0
         self.balance: Union[int, BitVec] = 0
-        self.storage: Optional[Union[int, Storage]] = None
-        self.code: Optional[Union[bytes, Array]] = None
+        self.storage: Union[Storage, Array] = Array()
+        self.code: Union[bytes, Array] = bytes()
 
     def get_nonce(self, address: int) -> Union[int, BitVec]:
         if issymbolic(address):
@@ -81,11 +81,12 @@ class AccountState:
 class BlockHeaderState:
     def __init__(self, provider: Optional[ProviderAPI]) -> None:
         self.provider = provider
-        self.blocknumber: Optional[Union[int, BitVec]] = None
-        self.timestamp: Optional[Union[int, BitVec]] = None
-        self.difficulty: Optional[Union[int, BitVec]] = None
-        self.gaslimit: Optional[Union[int, BitVec]] = None
-        self.coinbase: Optional[Union[int, BitVec]] = None
+        # london hardfork values
+        self.blocknumber: Union[int, BitVec] = 12965000
+        self.timestamp: Union[int, BitVec] = 1628166822
+        self.difficulty: Union[int, BitVec] = 7742494561645080
+        self.gaslimit: Union[int, BitVec] = 30029122
+        self.coinbase: Union[int, BitVec] = 0
 
     def get_blocknumber(self) -> Union[int, BitVec]:
         if self.provider is not None:
@@ -135,6 +136,9 @@ class WorldState:
         self.block_header_state: BlockHeaderState
 
     def accounts(self) -> Set[int]:
+        pass
+
+    def populate_state(self):
         pass
 
     def delete_account(self) -> Union[int, BitVec]:
