@@ -1,55 +1,58 @@
 from typing import Dict, List, Optional, Tuple, Union
+from ape_manticore.manticore.core.smtlib.expression import ArrayProxy
 from ...core.smtlib import (
     BitVec,
     ConstraintSet,
 )
+import copy
+import logging
+import copy
+from io import TextIOBase
+from typing import Dict, List, Optional, Set, Tuple, Union, TypeVar
+from ...ethereum.state import State
 
 
 class Storage:
     def __init__(
-        self, constraints: ConstraintSet, address: int, items: Optional[Dict[int, int]] = None
+        self, address: int, constraints: ConstraintSet, items: Optional[Dict[int, int]] = None
     ):
-        """
-        :param constraints: the ConstraintSet with which this Storage object is associated
-        :param address: the address that owns this storage
-        :param items: optional items to populate the storage with
-        """
-        self._data = constraints.new_array(
+
+        self.data = constraints.new_array(
             index_bits=256,
             value_bits=256,
             name=f"STORAGE_{address:x}",
             avoid_collisions=True,
-            # sam.moelius: The use of default here creates unnecessary if-then-elses.  See
-            # ArrayProxy.get in expression.py.
             # default=0,
         )
+
+        # if storage is concrete, populate items into storage
         if items is not None:
             for key, value in items.items():
                 self.set(key, value)
 
-    def __copy__(self):
+    def __copy__(self) -> Storage:
         other = Storage.__new__(Storage)
-        other._data = copy.copy(self._data)
+        other.data = copy.copy(self.data)
         return other
 
     def __getitem__(self, offset: Union[int, BitVec]) -> Union[int, BitVec]:
         return self.get(offset, 0)
 
     def get(self, offset: Union[int, BitVec], default: Union[int, BitVec]) -> Union[int, BitVec]:
-        return self._data.get(offset, default)
+        return self.data.get(offset, default)
 
-    def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]):
-        self._data[offset] = value
+    def set(self, offset: Union[int, BitVec], value: Union[int, BitVec]) -> None:
+        self.data[offset] = value
 
     def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
-        return self._data.get_items()
+        return self.data.get_items()
 
-    def dump(self, stream: TextIOBase, state: State):
+    def dump(self, stream: TextIOBase, state: State) -> None:
         concrete_indexes = set()
-        for sindex in self._data.written:
+        for sindex in self.data.written:
             concrete_indexes.add(state.solve_one(sindex, constrain=True))
 
         for index in concrete_indexes:
             stream.write(
-                f"storage[{index:x}] = {state.solve_one(self._data[index], constrain=True):x}\n"
+                f"storage[{index:x}] = {state.solve_one(self.data[index], constrain=True):x}\n"
             )

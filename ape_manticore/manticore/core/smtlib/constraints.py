@@ -1,11 +1,9 @@
 import itertools
 import sys
 import copy
-from typing import Optional
 from ...utils.helpers import PickleSerializer
 from ...exceptions import SmtlibError
 from .expression import (
-    Expression,
     BitVecVariable,
     BoolVariable,
     ArrayVariable,
@@ -24,9 +22,7 @@ from .visitors import (
     get_variables,
     simplify,
     replace,
-    pretty_print,
 )
-from ...utils import config
 import logging
 
 logger = logging.getLogger(__name__)

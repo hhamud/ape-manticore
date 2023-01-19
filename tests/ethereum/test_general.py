@@ -37,8 +37,6 @@ from ape_manticore.manticore.ethereum import (
 )
 from ape_manticore.manticore.ethereum.plugins import FilterFunctions
 from ape_manticore.manticore.ethereum.solidity import SolidityMetadata
-
-# from ape_manticore.manticore.platforms import evm
 from ape_manticore.manticore.platforms.evm.evmworld import EVMWorld
 from ape_manticore.manticore.platforms.evm.exceptions import (
     ConcretizeArgument,

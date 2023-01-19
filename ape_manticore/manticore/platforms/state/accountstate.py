@@ -3,47 +3,51 @@ from .worldstate import EmptyWorldState
 from .storage import Storage
 from typing import Optional, Set, Union, Dict, List
 from ...core.smtlib import BitVec, Array, ConstraintSet, issymbolic
+from .storage import Storage
 from ape.api import ProviderAPI
 
 
 class AccountState:
-    def __init__(self, provider: Optional[ProviderAPI]) -> None:
+    def __init__(
+        self, address: int, constraints: ConstraintSet, provider: Optional[ProviderAPI] = None
+    ) -> None:
+        self.address = address
         self.provider = provider
         self.nonce: Union[int, BitVec] = 0
         self.balance: Union[int, BitVec] = 0
-        self.storage: Union[Storage, Array] = Array()
+        self.storage: Union[Storage, Array] = Storage(address, constraints)
         self.code: Union[bytes, Array] = bytes()
 
-    def __setitem__(self):
-        pass
-
-    def get_nonce(self, address: int) -> Union[int, BitVec]:
-        if issymbolic(address):
-            raise ValueError(f"Cannot retrieve the nonce of symbolic address {address}")
+    def get_nonce(self) -> Union[int, BitVec]:
+        if issymbolic(self.address):
+            raise ValueError(f"Cannot retrieve the nonce of symbolic address {self.address}")
         if self.provider is not None:
-            return self.provider.get_nonce(str(address))
-        else:
-            return self.nonce
+            self.set_nonce(self.provider.get_nonce(str(self.address)))
+        return self.nonce
 
-    def get_balance(self, address: int) -> Union[int, BitVec]:
+    def get_balance(self) -> Union[int, BitVec]:
         if self.provider is not None:
-            return self.provider.get_balance(str(address))
-        else:
-            return self.balance
+            self.set_balance(self.provider.get_balance(str(self.address)))
+        return self.balance
 
-    def has_storage(self, address: int) -> bool:
-        pass
-
-    def get_storage(self, address: int) -> Union[Storage, Array]:
+    def has_storage(self) -> bool:
         if self.provider is not None:
-            return self.provider.get_storage(str(address))
+            try:
+                self.get_storage()
+            except:
+                raise NotImplemented
+            return True
+        return False
+
+    def get_storage(self) -> Union[Storage, Array]:
+        if self.provider is not None:
+            self.set_storage(self.provider.get_storage(str(self.address)))
         return self.storage
 
-    def get_code(self, address: int) -> Union[bytes, Array]:
+    def get_code(self) -> Union[bytes, Array]:
         if self.provider is not None:
-            return self.provider.get_code(str(address))
-        else:
-            return self.code
+            self.set_code(self.provider.get_code(str(self.address)))
+        return self.code
 
     def set_nonce(self, value: Union[int, BitVec]) -> None:
         self.nonce = value
@@ -57,13 +61,13 @@ class AccountState:
     def set_storage_data(
         self,
         constraints: ConstraintSet,
-        address: int,
         offset: Union[int, BitVec],
         value: Union[int, BitVec],
-    ):
-        storage = self.storage.get(address)
+    ) -> None:
+        storage = self.storage.get(offset, value)
+
         if storage is None:
-            storage = Storage(constraints, address)
+            storage = Storage(self.address, constraints)
             self.storage = storage
         storage.set(offset, value)
 
