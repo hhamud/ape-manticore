@@ -3,7 +3,7 @@ import binascii
 import random
 import io
 import copy
-from typing import List, Set, Tuple, Union
+from typing import List, Set, Tuple, Union, Optional
 from ...platforms.platform import Platform
 from ...core.smtlib import (
     SelectedSolver,
@@ -27,6 +27,8 @@ from .common import *
 from .transaction import Transaction
 from .exceptions import *
 import logging
+from ..state.forkworldstate import WorldState
+from ape.api import ProviderAPI
 
 
 logger = logging.getLogger(__name__)
@@ -46,9 +48,12 @@ class EVMWorld(Platform):
         "solve",
     }
 
-    def __init__(self, constraints, fork=DEFAULT_FORK, **kwargs):
+    def __init__(
+        self, constraints, provider: Optional[ProviderAPI] = None, fork=DEFAULT_FORK, **kwargs
+    ):
         super().__init__(path="NOPATH", **kwargs)
-        self._world_state = {}
+        self._provider = provider
+        self._world_state = WorldState(constraints, provider)
         self._constraints = constraints
         self._callstack: List[
             Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, ArrayProxy], EVM]
@@ -58,7 +63,6 @@ class EVMWorld(Platform):
         self._pending_transaction = None
         self._transactions: List[Transaction] = list()
         self._fork = fork
-        self._block_header = None
         self.start_block()
 
     def __getstate__(self):
@@ -141,7 +145,7 @@ class EVMWorld(Platform):
 
     def __getitem__(self, index):
         assert isinstance(index, int)
-        return self._world_state[index]
+        return self.accounts[index]
 
     def __contains__(self, key):
         assert not issymbolic(key), "Symbolic address not supported"
@@ -437,7 +441,7 @@ class EVMWorld(Platform):
 
     @property
     def accounts(self):
-        return list(self._world_state.keys())
+        return self._world_state.accounts()
 
     @property
     def normal_accounts(self):

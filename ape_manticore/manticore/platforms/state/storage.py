@@ -14,7 +14,10 @@ from ...ethereum.state import State
 
 class Storage:
     def __init__(
-        self, address: int, constraints: ConstraintSet, items: Optional[Dict[int, int]] = None
+        self,
+        address: Union[int, BitVec],
+        constraints: ConstraintSet,
+        items: Optional[Dict[int, int]] = None,
     ):
 
         self.data = constraints.new_array(
@@ -22,7 +25,6 @@ class Storage:
             value_bits=256,
             name=f"STORAGE_{address:x}",
             avoid_collisions=True,
-            # default=0,
         )
 
         # if storage is concrete, populate items into storage

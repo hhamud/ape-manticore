@@ -1,5 +1,3 @@
-from ape_manticore.manticore.platforms.state.provider import ProviderAPI
-from .worldstate import EmptyWorldState
 from .storage import Storage
 from typing import Optional, Set, Union, Dict, List
 from ...core.smtlib import BitVec, Array, ConstraintSet, issymbolic
@@ -9,10 +7,13 @@ from ape.api import ProviderAPI
 
 class AccountState:
     def __init__(
-        self, address: int, constraints: ConstraintSet, provider: Optional[ProviderAPI] = None
+        self,
+        address: Union[int, BitVec],
+        constraints: ConstraintSet,
+        provider: Optional[ProviderAPI] = None,
     ) -> None:
-        self.address = address
-        self.provider = provider
+        self.address: Union[int, BitVec] = address
+        self.provider: Optional[ProviderAPI] = provider
         self.nonce: Union[int, BitVec] = 0
         self.balance: Union[int, BitVec] = 0
         self.storage: Union[Storage, Array] = Storage(address, constraints)
