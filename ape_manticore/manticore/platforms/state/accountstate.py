@@ -1,23 +1,36 @@
 from .storage import Storage
 from typing import Optional, Set, Union, Dict, List
-from ...core.smtlib import BitVec, Array, ConstraintSet, issymbolic
+from ...core.smtlib import BitVec, Array, ConstraintSet, issymbolic, Operators
 from .storage import Storage
 from ape.api import ProviderAPI
+from ..evm.exceptions import EVMException
 
 
 class AccountState:
     def __init__(
         self,
-        address: Union[int, BitVec],
+        address: int,
         constraints: ConstraintSet,
+        balance: Union[int, BitVec] = 0,
+        nonce: Optional[Union[int, BitVec]] = None,
+        storage: Optional[Union[Storage, Array]] = None,
+        code: Optional[Union[bytes, Array]] = None,
         provider: Optional[ProviderAPI] = None,
     ) -> None:
-        self.address: Union[int, BitVec] = address
+        # create account
+        self.address: int = address
         self.provider: Optional[ProviderAPI] = provider
-        self.nonce: Union[int, BitVec] = 0
-        self.balance: Union[int, BitVec] = 0
-        self.storage: Union[Storage, Array] = Storage(address, constraints)
-        self.code: Union[bytes, Array] = bytes()
+        if nonce is None:
+            self.nonce: Union[int, BitVec] = 1 if bool(code) else 0
+        else:
+            self.nonce: Union[int, BitVec] = nonce
+        self.balance: Union[int, BitVec] = (
+            Operators.ZEXTEND(balance, 512) if isinstance(balance, BitVec) else 0
+        )
+        self.storage: Union[Storage, Array] = (
+            Storage(address, constraints) if storage is None else storage
+        )
+        self.code: Union[bytes, Array] = bytes() if code is None else code
 
     def get_nonce(self) -> Union[int, BitVec]:
         if issymbolic(self.address):
@@ -39,6 +52,9 @@ class AccountState:
                 raise NotImplemented
             return True
         return False
+
+    def has_code(self) -> bool:
+        return len(self.code) > 0
 
     def get_storage(self) -> Union[Storage, Array]:
         if self.provider is not None:
@@ -73,4 +89,7 @@ class AccountState:
         storage.set(offset, value)
 
     def set_code(self, code: Union[bytes, Array]) -> None:
+        # check if it already has a codehash
+        if bool(self.code):
+            raise EVMException("Code already set")
         self.code = code

@@ -31,11 +31,14 @@ from .detectors import Detector
 from .solidity import SolidityMetadata
 from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
+
+# from ..platforms import evm
 from ..platforms.evm.evmworld import EVMWorld
 from ..utils import config
 from ..utils.deprecated import deprecated
 from ..utils.enums import Sha3Type
 from ..utils.helpers import PickleSerializer, printable_bytes
+from ape.api import ProviderAPI
 
 logger = logging.getLogger(__name__)
 logging.getLogger("CryticCompile").setLevel(logging.ERROR)
@@ -403,7 +406,7 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, plugins=None, **kwargs):
+    def __init__(self, provider: Optional[ProviderAPI] = None, plugins=None, **kwargs):
         """
         A Manticore EVM manager
         :param plugins: the plugins to register in this manticore manager
@@ -411,7 +414,7 @@ class ManticoreEVM(ManticoreBase):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = EVMWorld(constraints)
+        world = EVMWorld(constraints, provider)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
         if plugins is not None:

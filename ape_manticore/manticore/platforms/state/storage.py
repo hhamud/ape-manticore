@@ -32,7 +32,7 @@ class Storage:
             for key, value in items.items():
                 self.set(key, value)
 
-    def __copy__(self) -> Storage:
+    def __copy__(self):
         other = Storage.__new__(Storage)
         other.data = copy.copy(self.data)
         return other

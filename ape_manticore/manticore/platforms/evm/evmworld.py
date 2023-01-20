@@ -4,6 +4,9 @@ import random
 import io
 import copy
 from typing import List, Set, Tuple, Union, Optional
+from ape_manticore.manticore.core.smtlib.constraints import ConstraintSet
+
+from ape_manticore.manticore.platforms.state.accountstate import AccountState
 from ...platforms.platform import Platform
 from ...core.smtlib import (
     SelectedSolver,
@@ -25,11 +28,11 @@ import sha3
 import rlp
 from .common import *
 from .transaction import Transaction
-from .exceptions import *
 import logging
 from ..state.forkworldstate import WorldState
 from ape.api import ProviderAPI
-
+from .evm import EVM
+from ..state.storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -49,14 +52,18 @@ class EVMWorld(Platform):
     }
 
     def __init__(
-        self, constraints, provider: Optional[ProviderAPI] = None, fork=DEFAULT_FORK, **kwargs
+        self,
+        constraints: ConstraintSet,
+        provider: Optional[ProviderAPI] = None,
+        fork=DEFAULT_FORK,
+        **kwargs,
     ):
         super().__init__(path="NOPATH", **kwargs)
-        self._provider = provider
-        self._world_state = WorldState(constraints, provider)
-        self._constraints = constraints
+        self._provider: Optional[ProviderAPI] = provider
+        self._world_state: WorldState = WorldState(constraints, provider)
+        self._constraints: ConstraintSet = constraints
         self._callstack: List[
-            Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, ArrayProxy], EVM]
+            Tuple[Transaction, List[EVMLog], Set[int], Optional[Storage], EVM]
         ] = []
         self._deleted_accounts: Set[int] = set()
         self._logs: List[EVMLog] = list()
@@ -340,8 +347,7 @@ class EVMWorld(Platform):
 
         if tx.is_human:
             for deleted_account in self._deleted_accounts:
-                if deleted_account in self._world_state:
-                    del self._world_state[deleted_account]
+                self.delete_account(deleted_account)
             unused_fee = unused_gas * tx.price
             used_fee = used_gas * tx.price
             self.add_to_balance(tx.caller, unused_fee)
@@ -440,11 +446,11 @@ class EVMWorld(Platform):
             return None
 
     @property
-    def accounts(self):
+    def accounts(self) -> List[int]:
         return self._world_state.accounts()
 
     @property
-    def normal_accounts(self):
+    def normal_accounts(self) -> List[int]:
         accs = []
         for address in self.accounts:
             if len(self.get_code(address)) == 0:
@@ -452,7 +458,7 @@ class EVMWorld(Platform):
         return accs
 
     @property
-    def contract_accounts(self):
+    def contract_accounts(self) -> List[int]:
         accs = []
         for address in self.accounts:
             if len(self.get_code(address)) > 0:
@@ -460,14 +466,13 @@ class EVMWorld(Platform):
         return accs
 
     @property
-    def deleted_accounts(self):
+    def deleted_accounts(self) -> Set[int]:
         return self._deleted_accounts
 
-    def delete_account(self, address):
-        if address in self._world_state:
-            self._deleted_accounts.add(address)
+    def delete_account(self, address: int) -> None:
+        self._world_state.delete_account(address)
 
-    def get_storage_data(self, storage_address, offset):
+    def get_storage_data(self, storage_address: int, offset: Union[int, BitVec]):
         """
         Read a value from a storage slot on the specified account
 
@@ -477,10 +482,12 @@ class EVMWorld(Platform):
         :return: the value
         :rtype: int or BitVec
         """
-        value = self._world_state[storage_address]["storage"].get(offset, 0)
+        value = self._world_state.accounts_state[storage_address].storage.get(offset, 0)
         return simplify(value)
 
-    def set_storage_data(self, storage_address, offset, value):
+    def set_storage_data(
+        self, storage_address: int, offset: Union[int, BitVec], value: Union[int, BitVec]
+    ) -> None:
         """
         Writes a value to a storage slot in specified account
 
@@ -490,9 +497,9 @@ class EVMWorld(Platform):
         :param value: the value to write
         :type value: int or BitVec
         """
-        self._world_state[storage_address]["storage"][offset] = value
+        self._world_state.accounts_state[storage_address].storage.set(offset, value)
 
-    def get_storage_items(self, address):
+    def get_storage_items(self, address: int):
         """
         Gets all items in an account storage
 
@@ -500,29 +507,17 @@ class EVMWorld(Platform):
         :return: all items in account storage. items are tuple of (index, value). value can be symbolic
         :rtype: list[(storage_index, storage_value)]
         """
-        storage = self._world_state[address]["storage"]
-        items = []
-        array = storage.array
-        while not isinstance(array, ArrayVariable):
-            items.append((array.index, array.value))
-            array = array.array
-        return items
+        return self._world_state.accounts_state[address].storage.get_items()
 
-    def has_storage(self, address):
+    def has_storage(self, address: int) -> bool:
         """
         True if something has been written to the storage.
         Note that if a slot has been erased from the storage this function may
         lose any meaning.
         """
-        storage = self._world_state[address]["storage"]
-        array = storage.array
-        while not isinstance(array, ArrayVariable):
-            if isinstance(array, ArrayStore):
-                return True
-            array = array.array
-        return False
+        return self._world_state.accounts_state[address].has_storage()
 
-    def get_storage(self, address):
+    def get_storage(self, address: int) -> Union[Storage, Array]:
         """
         Gets the storage of an account
 
@@ -530,36 +525,32 @@ class EVMWorld(Platform):
         :return: account storage
         :rtype: bytearray or ArrayProxy
         """
-        return self._world_state[address]["storage"]
+        return self._world_state.accounts_state[address].get_storage()
 
-    def _set_storage(self, address, storage):
+    def _set_storage(self, address: int, storage: Union[Storage, Array]) -> None:
         """Private auxiliary function to replace the storage"""
-        self._world_state[address]["storage"] = storage
+        self._world_state.accounts_state[address].set_storage(storage)
 
-    def get_nonce(self, address):
-        if issymbolic(address):
-            raise ValueError(f"Cannot retrieve the nonce of symbolic address {address}")
-        else:
-            ret = self._world_state[address]["nonce"]
-        return ret
+    def get_nonce(self, address: int) -> Union[int, BitVec]:
+        return self._world_state.accounts_state[address].get_nonce()
 
-    def increase_nonce(self, address):
+    def increase_nonce(self, address: int) -> Union[int, BitVec]:
         new_nonce = self.get_nonce(address) + 1
-        self._world_state[address]["nonce"] = new_nonce
+        self._world_state.accounts_state[address].set_nonce(new_nonce)
         return new_nonce
 
-    def set_balance(self, address, value):
+    def set_balance(self, address: int, value: Union[int, BitVec]) -> None:
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
-        self._world_state[int(address)]["balance"] = value
+        self._world_state.accounts_state[int(address)].set_balance(value)
 
-    def get_balance(self, address):
-        if address not in self._world_state:
+    def get_balance(self, address: int) -> Union[int, BitVec]:
+        if address not in self.accounts:
             return 0
-        return Operators.EXTRACT(self._world_state[address]["balance"], 0, 256)
+        return Operators.EXTRACT(self._world_state.accounts_state[address].get_balance(), 0, 256)
 
-    def account_exists(self, address):
-        if address not in self._world_state:
+    def account_exists(self, address: int) -> Union[bool, Union[int, BitVec]]:
+        if address not in self.accounts:
             return False  # accounts default to nonexistent
         return (
             self.has_code(address)
@@ -567,35 +558,36 @@ class EVMWorld(Platform):
             or Operators.UGT(self.get_balance(address), 0)
         )
 
-    def add_to_balance(self, address, value):
+    def add_to_balance(self, address: int, value: Union[int, BitVec]) -> None:
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
-        self._world_state[address]["balance"] += value
+        old_value = self.get_balance(address)
+        new_value = old_value + value
+        self._world_state.accounts_state[address].set_balance(new_value)
 
-    def sub_from_balance(self, address, value):
+    def sub_from_balance(self, address: int, value: Union[int, BitVec]) -> None:
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
-        self._world_state[address]["balance"] -= value
+        old_value = self.get_balance(address)
+        new_value = old_value - value
+        self._world_state.accounts_state[address].set_balance(new_value)
 
-    def send_funds(self, sender, recipient, value):
+    def send_funds(self, sender: int, recipient: int, value: Union[int, BitVec]) -> None:
         if isinstance(value, BitVec):
             value = Operators.ZEXTEND(value, 512)
-        self._world_state[sender]["balance"] -= value
-        self._world_state[recipient]["balance"] += value
+        self.sub_from_balance(sender, value)
+        self.add_to_balance(recipient, value)
 
-    def get_code(self, address):
-        if address not in self._world_state:
+    def get_code(self, address: int) -> Union[bytes, Array]:
+        if address not in self.accounts:
             return bytes()
-        return self._world_state[address]["code"]
+        return self._world_state.accounts_state[address].get_code()
 
     def set_code(self, address, data):
-        assert data is not None and isinstance(data, (bytes, Array))
-        if self._world_state[address]["code"]:
-            raise EVMException("Code already set")
-        self._world_state[address]["code"] = data
+        self._world_state.accounts_state[address].set_code(data)
 
-    def has_code(self, address):
-        return len(self._world_state[address]["code"]) > 0
+    def has_code(self, address) -> bool:
+        return self._world_state.accounts_state[address].has_code()
 
     def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
@@ -638,22 +630,22 @@ class EVMWorld(Platform):
         self.add_to_balance(self.block_coinbase(), block_reward)
         # self._block_header = None
 
-    def block_coinbase(self):
-        return self._block_header.coinbase
+    def block_coinbase(self) -> Union[int, BitVec]:
+        return self._world_state.block_header_state.get_coinbase()
 
-    def block_timestamp(self):
-        return self._block_header.timestamp
+    def block_timestamp(self) -> Union[int, BitVec]:
+        return self._world_state.block_header_state.get_blocknumber()
 
-    def block_number(self):
-        return self._block_header.blocknumber
+    def block_number(self) -> Union[int, BitVec]:
+        return self._world_state.block_header_state.get_blocknumber()
 
-    def block_difficulty(self):
-        return self._block_header.difficulty
+    def block_difficulty(self) -> Union[int, BitVec]:
+        return self._world_state.block_header_state.get_difficulty()
 
-    def block_gaslimit(self):
-        return self._block_header.gaslimit
+    def block_gaslimit(self) -> Union[int, BitVec]:
+        return self._world_state.block_header_state.get_difficulty()
 
-    def block_hash(self, block_number=None, force_recent=True):
+    def block_hash(self, block_number: Optional[int] = None, force_recent: bool = True):
         """
         Calculates a block's hash
 
@@ -662,7 +654,7 @@ class EVMWorld(Platform):
         :return: the block hash
         """
         if block_number is None:
-            block_number = self.block_number() - 1
+            block_number: Union[int, BitVec] = self.block_number() - 1
 
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
@@ -745,25 +737,8 @@ class EVMWorld(Platform):
         :param storage: storage array
         :param nonce: the nonce for the account; contracts should have a nonce greater than or equal to 1
         """
-        if code is None:
-            code = bytes()
-        else:
-            if not isinstance(code, (bytes, Array)):
-                raise EthereumError("Wrong code type")
-
-        # nonce default to initial nonce
-        if nonce is None:
-            # As per EIP 161, contract accounts are initialized with a nonce of 1
-            nonce = 1 if len(code) > 0 else 0
-
-        if isinstance(balance, BitVec):
-            balance = Operators.ZEXTEND(balance, 512)
-
         if address is None:
             address = self.new_address()
-
-        if not isinstance(address, int):
-            raise EthereumError("You must provide an address")
 
         if address in self.accounts:
             # FIXME account may have been created via selfdestruct destination
@@ -771,31 +746,9 @@ class EVMWorld(Platform):
             # selfdestructed address, it can not be reused
             raise EthereumError("The account already exists")
 
-        if storage is None:
-            # Uninitialized values in a storage are 0 by spec
-            storage = self.constraints.new_array(
-                index_bits=256,
-                value_bits=256,
-                name=f"STORAGE_{address:x}",
-                avoid_collisions=True,
-                default=0,
-            )
-        else:
-            if isinstance(storage, ArrayProxy):
-                if storage.index_bits != 256 or storage.value_bits != 256:
-                    raise TypeError("An ArrayProxy 256bits -> 256bits is needed")
-            else:
-                if any((k < 0 or k >= 1 << 256 for k, v in storage.items())):
-                    raise TypeError(
-                        "Need a dict like object that maps 256 bits keys to 256 bits values"
-                    )
-            # Hopefully here we have a mapping from 256b to 256b
-
-        self._world_state[address] = {}
-        self._world_state[address]["nonce"] = nonce
-        self._world_state[address]["balance"] = balance
-        self._world_state[address]["storage"] = storage
-        self._world_state[address]["code"] = code
+        self._world_state.accounts_state[address] = AccountState(
+            address, self.constraints, balance, nonce, storage, code
+        )
 
         # adds hash of new address
         data = binascii.unhexlify("{:064x}{:064x}".format(address, 0))

@@ -54,7 +54,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pyyaml",
-        "protobuf~=3.20",
+        "protobuf>=4.21.6",
         # evm dependencies
         "pysha3",
         "prettytable",
@@ -70,7 +70,8 @@ setup(
         "capstone==5.0.0rc2",
         "pyevmasm>=0.2.3",
         # ape dependencies
-        "ape",
+        "eth-ape @ git+ssh://git@github.com/ApeWorX/ape@v0.5.9#egg=ape"
+        # "ape>=0.5.9",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
