@@ -38,12 +38,13 @@ from ape_manticore.manticore.ethereum import (
 from ape_manticore.manticore.ethereum.plugins import FilterFunctions
 from ape_manticore.manticore.ethereum.solidity import SolidityMetadata
 from ape_manticore.manticore.platforms.evm.evmworld import EVMWorld
+from ape_manticore.manticore.platforms.evm.evm import EVM
 from ape_manticore.manticore.platforms.evm.exceptions import (
     ConcretizeArgument,
     Return,
     Stop,
 )
-from ape_manticore.manticore.platforms.evm.common import concretized_args
+from ape_manticore.manticore.platforms.evm.common import concretized_args, to_signed
 from ape_manticore.manticore.utils.deprecated import ManticoreDeprecationWarning
 from ape_manticore.manticore.utils import config
 import io
@@ -417,7 +418,7 @@ class EthInstructionTests(unittest.TestCase):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints)
+        world = EVMWorld(constraints)
 
         address = 0x222222222222222222222222222222222222200
         caller = origin = 0x111111111111111111111111111111111111100
@@ -427,7 +428,7 @@ class EthInstructionTests(unittest.TestCase):
         data = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         gas = 1000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        new_vm = EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
         return constraints, world, new_vm
 
     def test_str(self):
@@ -470,7 +471,7 @@ class EthInstructionTests(unittest.TestCase):
         constraints.add(yy == -1)
         result = vm.SDIV(xx, yy)
         self.assertListEqual(
-            list(map(evm.to_signed, solver.get_all_values(constraints, result))), [-0x20]
+            list(map(to_signed, solver.get_all_values(constraints, result))), [-0x20]
         )
 
     def test_SDIVSx(self):
@@ -483,7 +484,7 @@ class EthInstructionTests(unittest.TestCase):
 
         result = vm.SDIV(xx, yy)
         self.assertListEqual(
-            list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)]
+            list(map(to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)]
         )
 
 

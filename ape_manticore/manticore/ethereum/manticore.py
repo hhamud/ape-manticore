@@ -406,7 +406,7 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, provider: Optional[ProviderAPI] = None, plugins=None, **kwargs):
+    def __init__(self, plugins=None, provider: Optional[ProviderAPI] = None, **kwargs):
         """
         A Manticore EVM manager
         :param plugins: the plugins to register in this manticore manager
@@ -414,7 +414,7 @@ class ManticoreEVM(ManticoreBase):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = EVMWorld(constraints, provider)
+        world: EVMWorld = EVMWorld(constraints, provider)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
         if plugins is not None:

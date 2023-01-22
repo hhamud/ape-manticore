@@ -122,3 +122,6 @@ version.py
 
 # Ape stuff
 .build/
+
+#direnv
+.envrc

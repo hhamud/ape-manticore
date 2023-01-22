@@ -4,6 +4,11 @@ from ...core.smtlib import BitVec, Array, ConstraintSet, issymbolic, Operators
 from .storage import Storage
 from ape.api import ProviderAPI
 from ..evm.exceptions import EVMException
+from web3 import Web3
+
+
+def toChecksumAddress(address: int):
+    return Web3.toChecksumAddress(address)
 
 
 class AccountState:
@@ -36,12 +41,12 @@ class AccountState:
         if issymbolic(self.address):
             raise ValueError(f"Cannot retrieve the nonce of symbolic address {self.address}")
         if self.provider is not None:
-            self.set_nonce(self.provider.get_nonce(str(self.address)))
+            self.set_nonce(self.provider.get_nonce(toChecksumAddress(self.address)))
         return self.nonce
 
     def get_balance(self) -> Union[int, BitVec]:
         if self.provider is not None:
-            self.set_balance(self.provider.get_balance(str(self.address)))
+            return self.provider.get_balance(toChecksumAddress(self.address))
         return self.balance
 
     def has_storage(self) -> bool:
@@ -58,12 +63,12 @@ class AccountState:
 
     def get_storage(self) -> Union[Storage, Array]:
         if self.provider is not None:
-            self.set_storage(self.provider.get_storage(str(self.address)))
+            self.set_storage(self.provider.get_storage(toChecksumAddress(self.address)))
         return self.storage
 
     def get_code(self) -> Union[bytes, Array]:
         if self.provider is not None:
-            self.set_code(self.provider.get_code(str(self.address)))
+            self.set_code(self.provider.get_code(toChecksumAddress(self.address)))
         return self.code
 
     def set_nonce(self, value: Union[int, BitVec]) -> None:

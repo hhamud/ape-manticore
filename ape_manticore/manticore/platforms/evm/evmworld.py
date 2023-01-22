@@ -74,6 +74,7 @@ class EVMWorld(Platform):
 
     def __getstate__(self):
         state = super().__getstate__()
+        state["_provider"] = self._provider
         state["_pending_transaction"] = self._pending_transaction
         state["_logs"] = self._logs
         state["_world_state"] = self._world_state
@@ -88,6 +89,7 @@ class EVMWorld(Platform):
 
     def __setstate__(self, state):
         super().__setstate__(state)
+        self._provider = state["_provider"]
         self._constraints = state["_constraints"]
         self._pending_transaction = state["_pending_transaction"]
         self._world_state = state["_world_state"]
@@ -166,6 +168,10 @@ class EVMWorld(Platform):
             + str(list((map(str, self.transactions))))
             + str(self.logs)
         )
+
+    @property
+    def provider(self):
+        return self._provider
 
     @property
     def logs(self):
@@ -747,7 +753,7 @@ class EVMWorld(Platform):
             raise EthereumError("The account already exists")
 
         self._world_state.accounts_state[address] = AccountState(
-            address, self.constraints, balance, nonce, storage, code
+            address, self.constraints, balance, nonce, storage, code, self.provider
         )
 
         # adds hash of new address

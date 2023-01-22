@@ -70,8 +70,10 @@ setup(
         "capstone==5.0.0rc2",
         "pyevmasm>=0.2.3",
         # ape dependencies
-        "eth-ape @ git+ssh://git@github.com/ApeWorX/ape@v0.5.9#egg=ape"
-        # "ape>=0.5.9",
+        # "eth-ape @ git+ssh://git@github.com/ApeWorX/ape@v0.5.9#egg=eth-ape",
+        "eth-ape>=0.5.6,<0.6",
+        "ape-foundry",
+        "ape-alchemy",
     ],
     python_requires=">=3.8,<4",
     extras_require=extras_require,
