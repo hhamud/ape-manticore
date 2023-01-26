@@ -1,6 +1,6 @@
 from .storage import Storage
 from typing import Optional, Set, Union, Dict, List
-from ...core.smtlib import BitVec, Array, ConstraintSet, issymbolic
+from ...core.smtlib import BitVec, ConstraintSet
 from .accountstate import AccountState
 from .blockheaderstate import BlockHeaderState
 from ape.api import ProviderAPI
@@ -18,8 +18,17 @@ class WorldState:
         self.accounts_state: Dict[int, AccountState] = {}
         self.block_header_state: BlockHeaderState = BlockHeaderState(provider)
 
-    def add_account(self, address: int) -> Union[int, BitVec]:
-        self.accounts_state[address] = AccountState(address, self.constraints)
+    def add_account(
+        self,
+        address: int,
+        balance: int,
+        nonce: Optional[int],
+        storage: Optional[Storage],
+        code: Optional[bytes],
+    ) -> Union[int, BitVec]:
+        self.accounts_state[address] = AccountState(
+            address, self.constraints, balance, nonce, storage, code, self.provider
+        )
         return address
 
     def accounts(self) -> List[int]:

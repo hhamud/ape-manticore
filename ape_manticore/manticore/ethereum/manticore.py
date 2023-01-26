@@ -3,7 +3,7 @@ import json
 import logging
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 import io
 import pyevmasm as EVMAsm
 import random
@@ -543,17 +543,17 @@ class ManticoreEVM(ManticoreBase):
 
     def solidity_create_contract(
         self,
-        source_code,
-        owner,
-        name=None,
-        contract_name=None,
-        libraries=None,
-        balance=0,
-        address=None,
-        args=(),
-        gas=None,
-        compile_args=None,
-    ):
+        source_code: str,
+        owner: EVMAccount,
+        name: Optional[str] = None,
+        contract_name: Optional[str] = None,
+        libraries: Optional[str] = None,
+        balance: int = 0,
+        address: Optional[int] = None,
+        args: Union[Tuple[()], Tuple[str, str]] = (),
+        gas: Optional[int] = None,
+        compile_args: Optional[Dict[str, Optional[Union[bool, str]]]] = None,
+    ) -> Optional[EVMContract]:
         """Creates a solidity contract and library dependencies
 
         :param source_code: solidity source code
@@ -655,6 +655,7 @@ class ManticoreEVM(ManticoreBase):
                     contract_account = self.create_contract(
                         owner=owner, init=md._init_bytecode, balance=0, gas=gas
                     )
+
                 if contract_account is None:
                     return None
 
@@ -698,7 +699,9 @@ class ManticoreEVM(ManticoreBase):
         else:
             return next(iter(nonces))
 
-    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=None):
+    def create_contract(
+        self, owner, balance=0, address=None, init=None, name=None, gas=None
+    ) -> Optional[EVMContract]:
         """Creates a contract
 
         :param owner: owner account (will be default caller in any transactions)

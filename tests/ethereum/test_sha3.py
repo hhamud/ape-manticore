@@ -290,12 +290,16 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
+        if m is None:
+            print("Failure")
+            return
         owner = m.create_account(balance=10000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         x = m.make_symbolic_value()
         y = m.make_symbolic_value()
+
         contract.foo(x, y)
 
         found = 0
