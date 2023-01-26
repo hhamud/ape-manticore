@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from ape_manticore.manticore.core.smtlib.expression import Array
 
 
 # Exceptions...
