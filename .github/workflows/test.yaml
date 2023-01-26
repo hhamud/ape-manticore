@@ -52,7 +52,7 @@ jobs:
         runs-on: ubuntu-20.04
         strategy:
             matrix:
-              type: ["ethereum_bench", "ethereum"]
+              type: [ "ethereum"]
         steps:
         - uses: actions/checkout@v3
         - name: Set up Python 3.9
