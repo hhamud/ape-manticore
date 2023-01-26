@@ -985,15 +985,15 @@ class EVMWorld(Platform):
             self._transactions.append(tx)
 
     def dump(self, stream, state, mevm, message):
-        from ..ethereum.manticore import calculate_coverage, flagged
+        from ...ethereum.manticore import calculate_coverage, flagged
 
-        blockchain = state.platform
+        blockchain: EVMWorld = state.platform
         last_tx = blockchain.last_transaction
 
         stream.write("Message: %s\n" % message)
         stream.write("Last exception: %s\n" % state.context.get("last_exception", "None"))
 
-        if last_tx:
+        if last_tx and "evm.trace" in state.context:
             at_runtime = last_tx.sort != "CREATE"
             address, offset, at_init = state.context.get("evm.trace", ((None, None, None),))[-1]
             assert last_tx.result is not None or at_runtime != at_init
@@ -1029,20 +1029,24 @@ class EVMWorld(Platform):
                 stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
             storage = blockchain.get_storage(account_address)
-            concrete_indexes = []
-            if len(storage.written) > 0:
-                concrete_indexes = state.solve_one_n_batched(storage.written, constrain=True)
+            if isinstance(storage, Storage):
+                stream = storage.dump(stream, state)
+                stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 
-            concrete_values = []
-            if len(concrete_indexes) > 0:
-                concrete_values = state.solve_one_n_batched(concrete_indexes, constrain=True)
-
-            assert len(concrete_indexes) == len(concrete_values)
-            for index, value in zip(concrete_indexes, concrete_values):
-                stream.write(f"storage[{index:x}] = {value:x}\n")
-
-            storage = blockchain.get_storage(account_address)
-            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
+            # concrete_indexes = []
+            # if len(storage.data.written) > 0:
+            # concrete_indexes = state.solve_one_n_batched(storage.written, constrain=True)
+            #
+            # concrete_values = []
+            # if len(concrete_indexes) > 0:
+            # concrete_values = state.solve_one_n_batched(concrete_indexes, constrain=True)
+            #
+            # assert len(concrete_indexes) == len(concrete_values)
+            # for index, value in zip(concrete_indexes, concrete_values):
+            # stream.write(f"storage[{index:x}] = {value:x}\n")
+            #
+            # storage = blockchain.get_storage(account_address)
+            # stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=False))
 
             if consts.sha3 is consts.sha3.concretize:
                 all_used_indexes = []
@@ -1053,7 +1057,7 @@ class EVMWorld(Platform):
                     storage = blockchain.get_storage(account_address)
                     # we are interested only in used slots
                     # temp_cs.add(storage.get(index) != 0)
-                    temp_cs.add(storage.is_known(index))
+                    temp_cs.add(storage._data.is_known(index))
                     # Query the solver to get all storage indexes with used slots
                     self._publish("will_solve", temp_cs, index, "get_all_values")
                     all_used_indexes = SelectedSolver.instance().get_all_values(temp_cs, index)

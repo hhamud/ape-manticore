@@ -1455,7 +1455,7 @@ class EthHelpersTest(unittest.TestCase):
 
     def test_account_exists(self):
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints)
+        world = EVMWorld(constraints)
         default = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
         empty = world.create_account(nonce=0, balance=0, code=b"")
         has_code = world.create_account(nonce=0, balance=0, code=b"ff")
@@ -1647,7 +1647,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         """
 
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints)
+        world = EVMWorld(constraints)
 
         world.create_account(
             address=0xF572E5295C57F15886F9B263E2F6D2D6C7B5EC6,
@@ -1662,7 +1662,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         bytecode = world.get_code(address)
         gas = 100000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        new_vm = EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
         returndata = ""
@@ -1682,7 +1682,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         https://github.com/trailofbits/manticore/issues/1169
         """
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints)
+        world = EVMWorld(constraints)
         asm_acc1 = """  CALLER
                         PUSH1 0x0
                         SSTORE
@@ -1768,7 +1768,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_gas_check(self):
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints)
+        world = EVMWorld(constraints)
         asm_acc = """  PUSH1 0x0
                        SELFDESTRUCT
                   """

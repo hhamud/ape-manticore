@@ -1,14 +1,12 @@
 from typing import Dict, List, Optional, Tuple, Union
-from ape_manticore.manticore.core.smtlib.expression import ArrayProxy
 from ...core.smtlib import (
     BitVec,
     ConstraintSet,
 )
 import copy
-import logging
 import copy
 from io import TextIOBase
-from typing import Dict, List, Optional, Set, Tuple, Union, TypeVar
+from typing import Dict, List, Optional, Tuple, Union
 from ...ethereum.state import State
 
 
@@ -49,12 +47,18 @@ class Storage:
     def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
         return self.data.get_items()
 
-    def dump(self, stream: TextIOBase, state: State) -> None:
-        concrete_indexes = set()
-        for sindex in self.data.written:
-            concrete_indexes.add(state.solve_one(sindex, constrain=True))
+    def dump(self, stream: TextIOBase, state: State) -> TextIOBase:
 
-        for index in concrete_indexes:
-            stream.write(
-                f"storage[{index:x}] = {state.solve_one(self.data[index], constrain=True):x}\n"
-            )
+        concrete_indexes = []
+        if len(self.data.written) > 0:
+            concrete_indexes = state.solve_one_n_batched(self.data.written, constrain=True)
+
+        concrete_values = []
+        if len(concrete_indexes) > 0:
+            concrete_values = state.solve_one_n_batched(concrete_indexes, constrain=True)
+
+        assert len(concrete_indexes) == len(concrete_values)
+        for index, value in zip(concrete_indexes, concrete_values):
+            stream.write(f"storage[{index:x}] = {value:x}\n")
+
+        return stream
