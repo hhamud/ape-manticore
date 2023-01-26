@@ -1,0 +1,43 @@
+on: ["push", "pull_request"]
+
+name: MacOS Tests
+
+
+jobs:
+  tests:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        type: ["ethereum"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+    - name: Install NPM
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16.x'
+    - name: Install dependencies
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+        pip install -e ".[dev]"
+    - name: Install Mac Dependencies
+      run: |
+        brew install bash
+        brew install wabt
+        brew install SRI-CSL/sri-csl/yices2
+        brew tap cvc4/cvc4
+        brew install cvc4/cvc4/cvc4
+        pip install solc-select
+        solc-select install 0.4.26
+        solc-select use 0.4.26
+    - name: Run Tests
+      env:
+        TEST_TYPE: ${{ matrix.type }}
+      run: |
+        cp scripts/run_tests.sh .
+        ./run_tests.sh
