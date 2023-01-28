@@ -5,8 +5,7 @@ import io
 import copy
 from typing import List, Set, Tuple, Union, Optional
 from ape_manticore.manticore.core.smtlib.constraints import ConstraintSet
-
-from ape_manticore.manticore.platforms.state.accountstate import AccountState
+from ape_manticore.manticore.platforms.evm.exceptions import EVMException, EndTx, StartTx
 from ...platforms.platform import Platform
 from ...core.smtlib import (
     SelectedSolver,
@@ -15,8 +14,6 @@ from ...core.smtlib import (
     ArrayProxy,
     Operators,
     Constant,
-    ArrayVariable,
-    ArrayStore,
     translate_to_smtlib,
     simplify,
     issymbolic,

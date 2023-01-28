@@ -544,13 +544,13 @@ class ManticoreEVM(ManticoreBase):
     def solidity_create_contract(
         self,
         source_code: str,
-        owner: EVMAccount,
+        owner: Union[int, EVMAccount],
         name: Optional[str] = None,
         contract_name: Optional[str] = None,
-        libraries: Optional[str] = None,
-        balance: int = 0,
+        libraries=None,
+        balance: Union[int, BitVec] = 0,
         address: Optional[int] = None,
-        args: Union[Tuple[()], Tuple[str, str]] = (),
+        args: Optional[Union[Tuple[()], Tuple[str, str]]] = (),
         gas: Optional[int] = None,
         compile_args: Optional[Dict[str, Optional[Union[bool, str]]]] = None,
     ) -> Optional[EVMContract]:
@@ -627,7 +627,11 @@ class ManticoreEVM(ManticoreBase):
                     for state in self.ready_states:
                         world = state.platform
 
-                        expr = Operators.UGE(world.get_balance(owner.address), balance)
+                        if isinstance(owner, EVMAccount):
+                            expr = Operators.UGE(world.get_balance(owner.address), balance)
+                        else:
+                            expr = Operators.UGE(world.get_balance(owner), balance)
+
                         self._publish("will_solve", None, self.constraints, expr, "can_be_true")
                         sufficient = SelectedSolver.instance().can_be_true(
                             self.constraints,
@@ -700,8 +704,14 @@ class ManticoreEVM(ManticoreBase):
             return next(iter(nonces))
 
     def create_contract(
-        self, owner, balance=0, address=None, init=None, name=None, gas=None
-    ) -> Optional[EVMContract]:
+        self,
+        owner: Union[int, EVMAccount],
+        balance: Union[int, BitVec] = 0,
+        address: Optional[int] = None,
+        init: Optional[str] = None,
+        name: Optional[str] = None,
+        gas=None,
+    ) -> EVMContract:
         """Creates a contract
 
         :param owner: owner account (will be default caller in any transactions)
@@ -715,10 +725,14 @@ class ManticoreEVM(ManticoreBase):
         :rtype: EVMAccount
         """
         if not self.count_ready_states():
+            logger.warning("No ready states")
             raise NoAliveStates
 
         nonce = self.get_nonce(owner)
-        expected_address = EVMWorld.calculate_new_address(int(owner), nonce=nonce)
+        if isinstance(owner, int):
+            expected_address = EVMWorld.calculate_new_address(owner, nonce=nonce)
+        else:
+            expected_address = EVMWorld.calculate_new_address(owner.address, nonce=nonce)
 
         if address is None:
             address = expected_address
@@ -735,13 +749,10 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError("Name already used")
         self._transaction("CREATE", owner, balance, address, data=init, gas=gas)
         # TODO detect failure in the constructor
-        if self.count_ready_states():
-            self._accounts[name] = EVMContract(
-                address=address, manticore=self, default_caller=owner, name=name
-            )
-            return self.accounts[name]
-        else:
-            logger.warning("No ready states")
+        self._accounts[name] = EVMContract(
+            address=address, manticore=self, default_caller=owner, name=name
+        )
+        return self.accounts[name]
 
     def _get_uniq_name(self, stem):
         count = 0
@@ -806,7 +817,14 @@ class ManticoreEVM(ManticoreBase):
             "CALL", caller, value=value, address=address, data=data, gas=gas, price=price
         )
 
-    def create_account(self, balance=0, address=None, code=None, name=None, nonce=None):
+    def create_account(
+        self,
+        balance: Union[int, BitVec] = 0,
+        address: Optional[int] = None,
+        code: Optional[Union[bytes, Array, str]] = None,
+        name: Optional[str] = None,
+        nonce=None,
+    ) -> EVMAccount:
         """Low level creates an account. This won't generate a transaction.
 
         :param balance: balance to be set on creation (optional)
@@ -911,7 +929,16 @@ class ManticoreEVM(ManticoreBase):
 
         return caller, address, value, data, gas, price
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, gas=None, price=1):
+    def _transaction(
+        self,
+        sort,
+        caller,
+        value: Union[int, BitVec] = 0,
+        address=None,
+        data=None,
+        gas=None,
+        price=1,
+    ):
         """Initiates a transaction
 
         :param caller: caller account
@@ -1077,6 +1104,7 @@ class ManticoreEVM(ManticoreBase):
         tx_limit=None,
         tx_use_coverage=True,
         tx_send_ether=True,
+        contract_account: Optional[int] = None,
         tx_account="attacker",
         tx_preconstrain=False,
         args=None,
@@ -1084,23 +1112,30 @@ class ManticoreEVM(ManticoreBase):
     ):
         owner_account = self.create_account(balance=10**10, name="owner", address=0x10000)
         attacker_account = self.create_account(balance=10**10, name="attacker", address=0x20000)
-        # Pretty print
-        logger.info("Starting symbolic create contract")
 
-        if tx_send_ether:
-            create_value = self.make_symbolic_value()
-        else:
-            create_value = 0
+        if contract_account is None:
+            # Pretty print
+            logger.info("Starting symbolic create contract")
 
-        contract_account = self.solidity_create_contract(
-            solidity_filename,
-            contract_name=contract_name,
-            owner=owner_account,
-            args=args,
-            compile_args=compile_args,
-            balance=create_value,
-            gas=230000,
-        )
+            if tx_send_ether:
+                create_value = self.make_symbolic_value()
+            else:
+                create_value = 0
+
+            contract_account = self.solidity_create_contract(
+                solidity_filename,
+                contract_name=contract_name,
+                owner=owner_account,
+                args=args,
+                compile_args=compile_args,
+                balance=create_value,
+                gas=230000,
+            )
+
+        elif solidity_filename is not None:
+            raise EthereumError(
+                "A target contract and a solidity filename cannot both be specified"
+            )
 
         if tx_account == "attacker":
             tx_account = [attacker_account]

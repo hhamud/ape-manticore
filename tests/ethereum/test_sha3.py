@@ -2,7 +2,9 @@
 File name is purposefully not test_* to run this test separately.
 """
 
+from binascii import Error
 import inspect
+from logging import raiseExceptions
 import unittest
 
 import os
@@ -24,7 +26,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         evm_consts = config.get_group("evm")
         evm_consts.sha3 = evm_consts.sha3.symbolicate
 
-        self.mevm = ManticoreEVM()
+        self.mevm: ManticoreEVM = ManticoreEVM()
         self.worksp = self.mevm.workspace
 
     def tearDown(self):
@@ -47,8 +49,8 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        owner = m.create_account(balance=10000000, name="owner")
-        attacker = m.create_account(balance=10000000, name="attacker")
+        owner = m.create_account(balance=10**10, name="owner")
+        attacker = m.create_account(balance=10**10, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 
         symbolic_input = m.make_symbolic_value()
@@ -293,7 +295,7 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         if m is None:
             print("Failure")
             return
-        owner = m.create_account(balance=10000000, name="owner")
+        owner = m.create_account(balance=40000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
 

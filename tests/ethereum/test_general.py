@@ -4,7 +4,6 @@ import subprocess
 import pkg_resources
 from contextlib import contextmanager
 from pathlib import Path
-
 import os
 import pyevmasm as EVMAsm
 import re
@@ -41,6 +40,8 @@ from ape_manticore.manticore.platforms.evm.evmworld import EVMWorld
 from ape_manticore.manticore.platforms.evm.evm import EVM
 from ape_manticore.manticore.platforms.evm.exceptions import (
     ConcretizeArgument,
+    EndTx,
+    StartTx,
     Return,
     Stop,
 )
@@ -1669,7 +1670,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         try:
             while True:
                 new_vm.execute()
-        except evm.EndTx as e:
+        except EndTx as e:
             result = e.result
             if e.result in ("RETURN", "REVERT"):
                 returndata = e.data
