@@ -746,7 +746,6 @@ class EVMWorld(Platform):
             raise EthereumError("The account already exists")
 
         self._world_state.add_account(address, balance, nonce, storage, code)
-        # constraints not being updated
 
         # adds hash of new address
         data = binascii.unhexlify("{:064x}{:064x}".format(address, 0))
