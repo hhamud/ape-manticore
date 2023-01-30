@@ -4,7 +4,7 @@ import uuid
 
 import re
 import copy
-from typing import Union, Optional, Dict, Tuple
+from typing import Union, Optional, Dict, Tuple, List
 
 
 class ExpressionException(SmtlibError):
@@ -1350,6 +1350,14 @@ class ArrayProxy(Array):
         return BitVecITE(
             size=self._array.value_bits, condition=is_known, true_value=value, false_value=default
         )
+
+    def get_items(self) -> List[Tuple[Union[int, BitVec], Union[int, BitVec]]]:
+        items = []
+        array = self.array
+        while not isinstance(array, ArrayVariable):
+            items.append((array.index, array.value))
+            array = array.array
+        return items
 
 
 class ArraySelect(BitVec):

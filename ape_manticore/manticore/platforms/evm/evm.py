@@ -35,6 +35,7 @@ from .common import (
     globalfakesha3,
     DEFAULT_FORK,
     TT256M1,
+    TT256,
     logger,
 )
 from .exceptions import (
@@ -987,6 +988,9 @@ class EVM(Eventful):
         :param exponent: exponent value, concretized with sampled values
         :return: BitVec* EXP result
         """
+        if isinstance(exponent, Constant):
+            exponent = exponent.value
+
         if exponent == 0:
             return 1
 
@@ -1421,9 +1425,11 @@ class EVM(Eventful):
 
         # Get the storage from the snapshot took before this call
         try:
-            original_value = self.world._callstack[-1][-2].get(offset, 0)
+            storage = self.world._callstack[-1][-2]
+            if storage is not None:
+                original_value = storage.get(offset, 0)
         except IndexError:
-            original_value = 0
+            pass
 
         current_value = self.world.get_storage_data(storage_address, offset)
 

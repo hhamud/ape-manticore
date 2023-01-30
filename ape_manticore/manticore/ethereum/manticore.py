@@ -752,6 +752,7 @@ class ManticoreEVM(ManticoreBase):
         self._accounts[name] = EVMContract(
             address=address, manticore=self, default_caller=owner, name=name
         )
+
         return self.accounts[name]
 
     def _get_uniq_name(self, stem):
@@ -887,6 +888,7 @@ class ManticoreEVM(ManticoreBase):
             world.create_account(address, balance, code=code, storage=None, nonce=nonce)
 
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
+
         return self.accounts[name]
 
     def _migrate_tx_expressions(self, state, caller, address, value, data, gas, price):

@@ -6,6 +6,7 @@ import copy
 from typing import List, Set, Tuple, Union, Optional
 from ape_manticore.manticore.core.smtlib.constraints import ConstraintSet
 from ape_manticore.manticore.platforms.evm.exceptions import EVMException, EndTx, StartTx
+from ape_manticore.manticore.platforms.state.blockheaderstate import BlockHeaderState
 from ...platforms.platform import Platform
 from ...core.smtlib import (
     SelectedSolver,
@@ -78,7 +79,6 @@ class EVMWorld(Platform):
         state["_deleted_accounts"] = self._deleted_accounts
         state["_transactions"] = self._transactions
         state["_fork"] = self._fork
-        state["_block_header"] = self._block_header
 
         return state
 
@@ -92,7 +92,6 @@ class EVMWorld(Platform):
         self._callstack = state["_callstack"]
         self._transactions = state["_transactions"]
         self._fork = state["_fork"]
-        self._block_header = state["_block_header"]
 
         for _, _, _, _, vm in self._callstack:
             self.forward_events_from(vm)
@@ -503,7 +502,7 @@ class EVMWorld(Platform):
         :return: all items in account storage. items are tuple of (index, value). value can be symbolic
         :rtype: list[(storage_index, storage_value)]
         """
-        return self._world_state.accounts_state[address].storage.get_items()
+        return self.get_storage(address).get_items()
 
     def has_storage(self, address: int) -> bool:
         """
@@ -614,7 +613,11 @@ class EVMWorld(Platform):
             logger.info("Coinbase account does not exists")
             self.create_account(coinbase)
 
-        self._block_header = BlockHeader(blocknumber, timestamp, difficulty, gaslimit, coinbase)
+        self._world_state.block_header_state.set_blocknumber(blocknumber)
+        self._world_state.block_header_state.set_timestamp(timestamp)
+        self._world_state.block_header_state.set_coinbase(coinbase)
+        self._world_state.block_header_state.set_difficulty(difficulty)
+        self._world_state.block_header_state.set_gaslimit(gaslimit)
 
     def end_block(self, block_reward=None):
         coinbase = self.block_coinbase()
@@ -743,6 +746,7 @@ class EVMWorld(Platform):
             raise EthereumError("The account already exists")
 
         self._world_state.add_account(address, balance, nonce, storage, code)
+        # constraints not being updated
 
         # adds hash of new address
         data = binascii.unhexlify("{:064x}{:064x}".format(address, 0))

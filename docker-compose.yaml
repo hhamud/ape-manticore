@@ -1,0 +1,9 @@
+services:
+  core:
+    image: ape-manticore
+    volumes:
+      - '.:/app'
+    build:
+      context: .
+    ports:
+      - '5678:5678'

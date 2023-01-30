@@ -1,4 +1,5 @@
-FROM ubuntu:20.04
+############################### Base ###############################
+FROM ubuntu:20.04 as base
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install python3.10 python3-pip git wget
 
@@ -17,7 +18,13 @@ RUN pip install .[dev]
 
 COPY . ./app
 
-CMD ["/bin/bash"]
+
+############################### Debugger ###############################
+From base as debug
+
+RUN pip install debugpy
 
 
+#CMD ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "tests/ethereum/test_sha3.py"]
 
+# python3 -m debugpy --listen 0.0.0.0:5678 --wait-for-client tests/ethereum/test_sha3.py

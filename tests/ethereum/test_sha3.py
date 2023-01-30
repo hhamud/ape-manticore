@@ -9,6 +9,7 @@ import unittest
 
 import os
 import shutil
+from ape_manticore.manticore.ethereum.account import EVMAccount, EVMContract
 from ape_manticore.manticore.platforms.evm.evmworld import EVMWorld
 from ape_manticore.manticore.core.smtlib import operators, ConstraintSet
 from ape_manticore.manticore.ethereum import ManticoreEVM
@@ -292,12 +293,13 @@ class EthSha3TestSymbolicate(unittest.TestCase):
         """
 
         m = self.ManticoreEVM()
-        if m is None:
-            print("Failure")
-            return
         owner = m.create_account(balance=40000000, name="owner")
         attacker = m.create_account(balance=10000000, name="attacker")
+        self.assertTrue(isinstance(owner, EVMAccount))
+        self.assertTrue(isinstance(attacker, EVMAccount))
+
         contract = m.solidity_create_contract(source_code, owner=owner, name="contract")
+        self.assertTrue(isinstance(contract, EVMContract))
 
         x = m.make_symbolic_value()
         y = m.make_symbolic_value()

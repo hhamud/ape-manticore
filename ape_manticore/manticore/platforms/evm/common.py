@@ -85,9 +85,6 @@ PendingTransaction = namedtuple(
     "PendingTransaction", ["type", "address", "price", "data", "caller", "value", "gas", "failed"]
 )
 EVMLog = namedtuple("EVMLog", ["address", "memlog", "topics"])
-BlockHeader = namedtuple(
-    "BlockHeader", ["blocknumber", "timestamp", "difficulty", "gaslimit", "coinbase"]
-)
 
 
 def ceil32(x):

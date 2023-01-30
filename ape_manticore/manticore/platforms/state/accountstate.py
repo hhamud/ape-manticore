@@ -30,12 +30,13 @@ class AccountState:
         else:
             self.nonce: Union[int, BitVec] = nonce
         self.balance: Union[int, BitVec] = (
-            Operators.ZEXTEND(balance, 512) if isinstance(balance, BitVec) else 0
+            Operators.ZEXTEND(balance, 512) if isinstance(balance, BitVec) else balance
         )
         self.storage: Union[Storage, Array] = (
             Storage(address, constraints) if storage is None else storage
         )
         self.code: Union[bytes, Array] = bytes() if code is None else code
+        self.contraints = constraints
 
     def get_nonce(self) -> Union[int, BitVec]:
         if issymbolic(self.address):
